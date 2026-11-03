@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import Link from 'next/link';
 import { motion } from 'framer-motion';
 import {
   LayoutGrid,
@@ -200,24 +201,22 @@ export function AppShell({
               <span className="w-2 h-2 bg-red-500 rounded-full border border-background absolute top-2 right-2" />
             </motion.button>
 
-            <motion.button
-              type="button"
-              whileTap={{ scale: 0.94 }}
+            <Link
+              href="/settings"
               className="w-10 h-10 rounded-full flex items-center justify-center text-zinc-600 dark:text-zinc-400 hover:text-white hover:bg-black/[0.08] dark:hover:bg-white/10 transition-colors cursor-pointer"
               aria-label="Paramètres"
             >
               <Settings size={18} />
-            </motion.button>
+            </Link>
 
-            <motion.button
-              type="button"
-              whileTap={{ scale: 0.94 }}
+            <Link
+              href="/bankroll"
               className="relative w-10 h-10 rounded-full flex items-center justify-center text-zinc-600 dark:text-zinc-400 hover:text-white hover:bg-black/[0.08] dark:hover:bg-white/10 transition-colors cursor-pointer"
               aria-label="Profil"
             >
               <User size={18} />
               <span className="w-2 h-2 rounded-full absolute -bottom-0.5 -right-0.5 bg-emerald-500 border border-background" />
-            </motion.button>
+            </Link>
           </div>
         </div>
       </aside>

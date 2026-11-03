@@ -16,7 +16,11 @@ import {
   Settings,
   Bell,
   User,
+  Zap,
+  TrendingDown,
+  ArrowRight,
 } from 'lucide-react';
+import { CloseButton } from '@/components/ui/CloseButton';
 import clsx from 'clsx';
 
 interface NavItem {
@@ -27,7 +31,7 @@ interface NavItem {
   badge?: string;
 }
 
-const NAV_ITEMS: NavItem[] = [
+const DESKTOP_NAV_ITEMS: NavItem[] = [
   {
     id: 'radar',
     label: 'Radar & Dashboard',
@@ -62,10 +66,22 @@ const NAV_ITEMS: NavItem[] = [
   },
 ];
 
+const MOBILE_NAV_ITEMS: NavItem[] = [
+  ...DESKTOP_NAV_ITEMS,
+  {
+    id: 'settings',
+    label: 'Réglages',
+    href: '/settings',
+    icon: Settings,
+  },
+];
+
 export function Navbar() {
   const pathname = usePathname();
   const [hoveredItem, setHoveredItem] = useState<string | null>(null);
   const [theme, setTheme] = useState<'dark' | 'light'>('dark');
+  const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
+  const [hasUnreadAlerts, setHasUnreadAlerts] = useState(true);
 
   useEffect(() => {
     // Check initial document class
@@ -124,7 +140,7 @@ export function Navbar() {
               aria-label="Navigation principale"
               className="w-12 flex flex-col items-center bg-[#EBEBED] dark:bg-card/60 backdrop-blur-2xl backdrop-saturate-150 shadow-sm border border-border rounded-full p-1 gap-1.5 relative shrink-0"
             >
-              {NAV_ITEMS.map((item) => {
+              {DESKTOP_NAV_ITEMS.map((item) => {
                 const Icon = item.icon;
                 const isActive = isItemActive(item.href);
 
@@ -194,7 +210,12 @@ export function Navbar() {
                 href="/match/psg-mci"
                 aria-label="Algorithme & Marché Actif"
                 title="Modèle Bivarié Poisson & Cotes Live"
-                className="w-12 h-12 rounded-full bg-[#EBEBED] dark:bg-card/60 backdrop-blur-2xl backdrop-saturate-150 border border-border flex items-center justify-center text-emerald-500 hover:bg-black/[0.05] dark:hover:bg-white/[0.08] transition-colors cursor-pointer shadow-sm focus-visible:ring-2 focus-visible:ring-foreground/20"
+                className={clsx(
+                  'w-12 h-12 rounded-full backdrop-blur-2xl backdrop-saturate-150 border border-border flex items-center justify-center transition-colors cursor-pointer shadow-sm focus-visible:ring-2 focus-visible:ring-foreground/20',
+                  pathname.startsWith('/match')
+                    ? 'bg-emerald-500/15 border-emerald-500/30 text-emerald-400'
+                    : 'bg-[#EBEBED] dark:bg-card/60 text-emerald-500 hover:bg-black/[0.05] dark:hover:bg-white/[0.08]'
+                )}
               >
                 <Activity size={18} strokeWidth={1.8} />
               </Link>
@@ -237,49 +258,184 @@ export function Navbar() {
             role="toolbar"
             className="w-12 flex flex-col items-center bg-[#EBEBED] dark:bg-card/60 backdrop-blur-2xl backdrop-saturate-150 shadow-sm border border-border rounded-full p-1 gap-1.5 relative shrink-0"
           >
-            {/* Notifications */}
+            {/* Notifications Alertes */}
             <motion.button
               type="button"
               whileTap={{ scale: 0.94 }}
-              className="relative w-10 h-10 rounded-full flex items-center justify-center text-zinc-600 dark:text-zinc-400 hover:text-black dark:hover:text-white hover:bg-black/[0.08] dark:hover:bg-white/10 transition-colors cursor-pointer"
+              onClick={() => setIsNotificationsOpen(prev => !prev)}
+              className={clsx(
+                'relative w-10 h-10 rounded-full flex items-center justify-center transition-colors cursor-pointer',
+                isNotificationsOpen
+                  ? 'bg-white text-black shadow-sm'
+                  : 'text-zinc-600 dark:text-zinc-400 hover:text-black dark:hover:text-white hover:bg-black/[0.08] dark:hover:bg-white/10'
+              )}
               aria-label="Notifications d'anomalies"
               title="Alertes de marché directes"
             >
-              <Bell size={18} />
-              <span className="w-2 h-2 bg-rose-500 rounded-full border border-background absolute top-2 right-2" />
+              <Bell size={18} strokeWidth={isNotificationsOpen ? 2 : 1.6} />
+              {hasUnreadAlerts && (
+                <span className="w-2 h-2 bg-rose-500 rounded-full border border-background absolute top-2 right-2" />
+              )}
             </motion.button>
 
-            {/* Paramètres */}
+            {/* Paramètres & Réglages -> /settings */}
             <Link
-              href="/lab"
-              aria-label="Paramètres du modèle"
-              title="Configuration du Lab Quant"
-              className="w-10 h-10 rounded-full flex items-center justify-center text-zinc-600 dark:text-zinc-400 hover:text-black dark:hover:text-white hover:bg-black/[0.08] dark:hover:bg-white/10 transition-colors cursor-pointer"
+              href="/settings"
+              aria-label="Paramètres & Réglages"
+              title="Paramètres de l'application"
+              className={clsx(
+                'w-10 h-10 rounded-full flex items-center justify-center transition-colors cursor-pointer relative',
+                pathname.startsWith('/settings')
+                  ? 'bg-white text-black shadow-sm'
+                  : 'text-zinc-600 dark:text-zinc-400 hover:text-black dark:hover:text-white hover:bg-black/[0.08] dark:hover:bg-white/10'
+              )}
             >
-              <Settings size={18} />
+              <Settings size={18} strokeWidth={pathname.startsWith('/settings') ? 2 : 1.6} />
             </Link>
 
-            {/* Profil */}
+            {/* Profil -> /bankroll */}
             <Link
               href="/bankroll"
-              aria-label="Profil & Bankroll"
+              aria-label="Profil & Portefeuille"
               title="Gestion de Bankroll"
-              className="relative w-10 h-10 rounded-full flex items-center justify-center text-zinc-600 dark:text-zinc-400 hover:text-black dark:hover:text-white hover:bg-black/[0.08] dark:hover:bg-white/10 transition-colors cursor-pointer"
+              className={clsx(
+                'relative w-10 h-10 rounded-full flex items-center justify-center transition-colors cursor-pointer',
+                pathname.startsWith('/bankroll')
+                  ? 'bg-white text-black shadow-sm'
+                  : 'text-zinc-600 dark:text-zinc-400 hover:text-black dark:hover:text-white hover:bg-black/[0.08] dark:hover:bg-white/10'
+              )}
             >
-              <User size={18} />
+              <User size={18} strokeWidth={pathname.startsWith('/bankroll') ? 2 : 1.6} />
               <span className="w-2 h-2 rounded-full absolute -bottom-0.5 -right-0.5 bg-emerald-500 border border-background" />
             </Link>
           </div>
         </div>
       </aside>
 
+      {/* FLYOUT NOTIFICATIONS DRAWER */}
+      <AnimatePresence>
+        {isNotificationsOpen && (
+          <div className="fixed inset-0 z-50 flex items-start justify-start pointer-events-none">
+            {/* Scrim */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setIsNotificationsOpen(false)}
+              className="fixed inset-0 bg-black/40 backdrop-blur-sm pointer-events-auto"
+            />
+
+            {/* Notification Popover Panel (placed next to sidebar) */}
+            <motion.div
+              initial={{ opacity: 0, x: -20, scale: 0.96 }}
+              animate={{ opacity: 1, x: 0, scale: 1 }}
+              exit={{ opacity: 0, x: -20, scale: 0.96 }}
+              transition={{ type: 'spring', stiffness: 450, damping: 32 }}
+              className="relative left-16 top-16 md:bottom-auto w-[92vw] sm:w-96 bg-card/95 backdrop-blur-2xl border border-border shadow-2xl rounded-3xl p-4 sm:p-5 pointer-events-auto font-sans z-50"
+            >
+              <div className="flex items-center justify-between pb-3 border-b border-border mb-3">
+                <div className="flex items-center gap-2">
+                  <Bell size={16} className="text-emerald-500" />
+                  <h4 className="text-sm font-semibold text-foreground tracking-tight">
+                    Alertes de Marché en Direct
+                  </h4>
+                </div>
+                <CloseButton onClick={() => setIsNotificationsOpen(false)} />
+              </div>
+
+              <div className="space-y-2.5 max-h-[60vh] overflow-y-auto no-scrollbar">
+                {/* Alert 1 */}
+                <Link
+                  href="/match/psg-mci"
+                  onClick={() => setIsNotificationsOpen(false)}
+                  className="block p-3 rounded-2xl bg-neutral-50 dark:bg-white/[0.03] border border-border hover:border-foreground/30 hover:bg-neutral-100 dark:hover:bg-white/[0.06] transition-all group"
+                >
+                  <div className="flex items-center justify-between mb-1">
+                    <span className="text-[10px] font-semibold uppercase px-2 py-0.5 rounded-full bg-rose-500/10 text-rose-500 flex items-center gap-1">
+                      <TrendingDown size={11} strokeWidth={2} />
+                      Dropping Odds -7.5%
+                    </span>
+                    <span className="text-[10px] text-muted-foreground">Il y a 14 min</span>
+                  </div>
+                  <h5 className="text-xs font-semibold text-foreground group-hover:text-emerald-400 transition-colors">
+                    PSG vs Man City • Chute Pinnacle
+                  </h5>
+                  <p className="text-[11px] text-muted-foreground mt-0.5">
+                    Cote PSG passée de @2.65 à @2.45. Volume massif identifié sur le marché asiatique.
+                  </p>
+                </Link>
+
+                {/* Alert 2 */}
+                <Link
+                  href="/match/psg-mci"
+                  onClick={() => setIsNotificationsOpen(false)}
+                  className="block p-3 rounded-2xl bg-neutral-50 dark:bg-white/[0.03] border border-border hover:border-foreground/30 hover:bg-neutral-100 dark:hover:bg-white/[0.06] transition-all group"
+                >
+                  <div className="flex items-center justify-between mb-1">
+                    <span className="text-[10px] font-semibold uppercase px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-500 flex items-center gap-1">
+                      <Zap size={11} strokeWidth={2} />
+                      Haute Value +20.1% EV
+                    </span>
+                    <span className="text-[10px] text-muted-foreground">Il y a 30 min</span>
+                  </div>
+                  <h5 className="text-xs font-semibold text-foreground group-hover:text-emerald-400 transition-colors">
+                    Bradley Barcola • Tirs Cadrés {'>'} 1.5
+                  </h5>
+                  <p className="text-[11px] text-muted-foreground mt-0.5">
+                    Cote Bookmaker @2.45 vs Cote Juste Modèle @2.04 (Probabilité 49%).
+                  </p>
+                </Link>
+
+                {/* Alert 3 */}
+                <Link
+                  href="/match/int-bar"
+                  onClick={() => setIsNotificationsOpen(false)}
+                  className="block p-3 rounded-2xl bg-neutral-50 dark:bg-white/[0.03] border border-border hover:border-foreground/30 hover:bg-neutral-100 dark:hover:bg-white/[0.06] transition-all group"
+                >
+                  <div className="flex items-center justify-between mb-1">
+                    <span className="text-[10px] font-semibold uppercase px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-500">
+                      Anomalie Marché -9.8%
+                    </span>
+                    <span className="text-[10px] text-muted-foreground">Il y a 45 min</span>
+                  </div>
+                  <h5 className="text-xs font-semibold text-foreground group-hover:text-emerald-400 transition-colors">
+                    Inter Milan vs Barcelone • Victoire Barça
+                  </h5>
+                  <p className="text-[11px] text-muted-foreground mt-0.5">
+                    Décrochage rapide Winamax de @2.55 vers @2.30.
+                  </p>
+                </Link>
+              </div>
+
+              <div className="pt-3 border-t border-border mt-3 flex items-center justify-between">
+                <button
+                  type="button"
+                  onClick={() => setHasUnreadAlerts(false)}
+                  className="text-xs text-muted-foreground hover:text-foreground transition-colors font-medium cursor-pointer"
+                >
+                  Tout marquer comme lu
+                </button>
+                <Link
+                  href="/screener"
+                  onClick={() => setIsNotificationsOpen(false)}
+                  className="text-xs text-emerald-500 hover:text-emerald-400 font-semibold flex items-center gap-1 transition-colors"
+                >
+                  <span>Ouvrir Screener</span>
+                  <ArrowRight size={13} strokeWidth={1.5} />
+                </Link>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
       {/* 2. DOCK MOBILE FLOTTANT (md:hidden) */}
       <nav
         aria-label="Navigation mobile"
-        className="md:hidden fixed bottom-3 left-4 right-4 z-50 flex justify-center pointer-events-none"
+        className="md:hidden fixed bottom-3 left-3 right-3 z-50 flex justify-center pointer-events-none"
       >
         <div className="flex items-center gap-1 p-1 bg-card/90 backdrop-blur-2xl backdrop-saturate-150 border border-border rounded-full shadow-2xl pointer-events-auto">
-          {NAV_ITEMS.map((item) => {
+          {MOBILE_NAV_ITEMS.map((item) => {
             const isActive = isItemActive(item.href);
             const Icon = item.icon;
 
@@ -288,7 +444,7 @@ export function Navbar() {
                 key={item.id}
                 href={item.href}
                 aria-label={item.label}
-                className="relative w-11 h-11 rounded-full flex items-center justify-center active:scale-95 transition-all"
+                className="relative w-10 h-10 rounded-full flex items-center justify-center active:scale-95 transition-all"
               >
                 {isActive && (
                   <motion.div
@@ -303,7 +459,7 @@ export function Navbar() {
                     isActive ? 'text-zinc-950 font-bold' : 'text-muted-foreground'
                   )}
                 >
-                  <Icon size={18} strokeWidth={isActive ? 2 : 1.5} />
+                  <Icon size={17} strokeWidth={isActive ? 2 : 1.5} />
                 </span>
               </Link>
             );

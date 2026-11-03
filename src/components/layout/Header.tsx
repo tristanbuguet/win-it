@@ -28,6 +28,7 @@ export function Header() {
     if (pathname.startsWith('/match')) return 'Match Hub & Poisson';
     if (pathname.startsWith('/lab')) return 'Lab Quant & Backtest';
     if (pathname.startsWith('/bankroll')) return 'Bankroll & Risque Kelly';
+    if (pathname.startsWith('/settings')) return 'Réglages & Modèle';
     return "Vue d'ensemble";
   };
 
@@ -89,7 +90,7 @@ export function Header() {
 
         {/* 3. Bouton primaire d'action gélule */}
         <Link
-          href="/bankroll"
+          href="/bankroll?action=new"
           className="h-9 px-3.5 sm:px-4 rounded-full bg-foreground text-background font-medium text-xs sm:text-sm flex items-center gap-1.5 hover:opacity-90 active:scale-95 transition-all shadow-sm cursor-pointer font-sans shrink-0 focus-visible:ring-2 focus-visible:ring-foreground/20 focus-visible:outline-none"
         >
           <Plus size={16} strokeWidth={2.5} />

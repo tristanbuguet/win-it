@@ -13,7 +13,11 @@ export function generateStaticParams() {
 
 export default async function MatchPage({ params }: MatchPageProps) {
   const { id } = await params;
-  const match = mockMatches.find(m => m.id === id) || mockMatches[0];
+  const match = mockMatches.find(m => m.id === id);
+
+  if (!match) {
+    notFound();
+  }
 
   return <MatchDetailClient match={match} allMatches={mockMatches} />;
 }

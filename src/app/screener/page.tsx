@@ -2,14 +2,19 @@
 
 import React, { useState, useMemo } from 'react';
 import Link from 'next/link';
+import { motion, AnimatePresence } from 'framer-motion';
 import { Card } from '@/components/ui/Card';
 import { EVBadge } from '@/components/ui/Badge';
+import { CloseButton } from '@/components/ui/CloseButton';
 import { mockMatches } from '@/lib/mock-data';
 import {
   Search,
   ArrowUpDown,
   ArrowRight,
   ChevronDown,
+  SlidersHorizontal,
+  RotateCcw,
+  Check,
 } from 'lucide-react';
 
 type SmartFilterId =
@@ -41,6 +46,20 @@ export default function ScreenerPage() {
   const [sortBy, setSortBy] = useState<'ev' | 'odds' | 'confidence' | 'time'>('ev');
   const [selectedCompetition, setSelectedCompetition] = useState<string>('all');
 
+  // Advanced Filters Drawer State
+  const [isAdvancedOpen, setIsAdvancedOpen] = useState(false);
+  const [minCustomEV, setMinCustomEV] = useState<number>(0);
+  const [minXG, setMinXG] = useState<number>(0);
+  const [selectedBookmaker, setSelectedBookmaker] = useState<string>('all');
+
+  const hasActiveAdvancedFilters = minCustomEV > 0 || minXG > 0 || selectedBookmaker !== 'all';
+
+  const resetAdvancedFilters = () => {
+    setMinCustomEV(0);
+    setMinXG(0);
+    setSelectedBookmaker('all');
+  };
+
   const filteredMatches = useMemo(() => {
     return mockMatches.filter(match => {
       // Search filter
@@ -54,6 +73,23 @@ export default function ScreenerPage() {
       // Competition filter
       if (selectedCompetition !== 'all' && match.competition !== selectedCompetition) {
         return false;
+      }
+
+      // Advanced filters
+      if (minCustomEV > 0) {
+        const hasEv = match.valueBets.some(vb => vb.evPercent >= minCustomEV);
+        if (!hasEv) return false;
+      }
+
+      if (minXG > 0) {
+        if (match.homeExpectedGoals + match.awayExpectedGoals < minXG) {
+          return false;
+        }
+      }
+
+      if (selectedBookmaker !== 'all') {
+        const hasBook = match.valueBets.some(vb => vb.bestBookmaker === selectedBookmaker);
+        if (!hasBook) return false;
       }
 
       // Smart pill filters
@@ -93,7 +129,7 @@ export default function ScreenerPage() {
       }
       return 0;
     });
-  }, [searchQuery, activeFilter, sortBy, selectedCompetition]);
+  }, [searchQuery, activeFilter, sortBy, selectedCompetition, minCustomEV, minXG, selectedBookmaker]);
 
   return (
     <div className="space-y-4">
@@ -129,24 +165,45 @@ export default function ScreenerPage() {
             />
           </div>
 
-          {/* Sort Selector (Section 3.3 C) */}
+          {/* Controls Cluster: Advanced Filters Drawer Trigger + Sort Selector */}
           <div className="flex items-center gap-2 w-full sm:w-auto">
-            <span className="text-xs text-muted-foreground whitespace-nowrap flex items-center gap-1.5 font-sans">
-              <ArrowUpDown size={13} strokeWidth={1.5} />
-              Trier :
-            </span>
-            <div className="relative flex-1 sm:flex-initial">
-              <select
-                value={sortBy}
-                onChange={e => setSortBy(e.target.value as any)}
-                className="w-full sm:w-auto h-9 appearance-none bg-black/[0.03] dark:bg-white/[0.04] border border-border text-foreground text-xs font-medium pl-3.5 pr-8 rounded-xl outline-none hover:border-foreground/30 focus-visible:ring-2 focus-visible:ring-foreground/10 cursor-pointer font-sans"
-              >
-                <option value="ev" className="bg-card text-foreground">Plus Forte EV %</option>
-                <option value="confidence" className="bg-card text-foreground">Confiance Modèle</option>
-                <option value="odds" className="bg-card text-foreground">Cote Bookmaker</option>
-                <option value="time" className="bg-card text-foreground">Heure de Match</option>
-              </select>
-              <ChevronDown size={13} strokeWidth={1.5} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none" />
+            {/* Advanced Filters Drawer Button */}
+            <button
+              type="button"
+              onClick={() => setIsAdvancedOpen(true)}
+              className={`h-9 px-3 rounded-xl border text-xs font-medium flex items-center gap-1.5 transition-all active:scale-95 cursor-pointer font-sans shrink-0 ${
+                hasActiveAdvancedFilters
+                  ? 'bg-emerald-500/15 border-emerald-500/30 text-emerald-400 font-semibold'
+                  : 'bg-black/[0.03] dark:bg-white/[0.04] border-border text-foreground hover:border-foreground/30'
+              }`}
+              title="Ouvrir les filtres avancés"
+            >
+              <SlidersHorizontal size={14} strokeWidth={1.75} />
+              <span>Filtres</span>
+              {hasActiveAdvancedFilters && (
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+              )}
+            </button>
+
+            {/* Sort Selector (Section 3.3 C) */}
+            <div className="flex items-center gap-1.5 flex-1 sm:flex-initial">
+              <span className="text-xs text-muted-foreground whitespace-nowrap hidden sm:flex items-center gap-1 font-sans">
+                <ArrowUpDown size={13} strokeWidth={1.5} />
+                Trier :
+              </span>
+              <div className="relative flex-1 sm:flex-initial">
+                <select
+                  value={sortBy}
+                  onChange={e => setSortBy(e.target.value as any)}
+                  className="w-full sm:w-auto h-9 appearance-none bg-black/[0.03] dark:bg-white/[0.04] border border-border text-foreground text-xs font-medium pl-3 pr-8 rounded-xl outline-none hover:border-foreground/30 focus-visible:ring-2 focus-visible:ring-foreground/10 cursor-pointer font-sans"
+                >
+                  <option value="ev" className="bg-card text-foreground">Plus Forte EV %</option>
+                  <option value="confidence" className="bg-card text-foreground">Confiance Modèle</option>
+                  <option value="odds" className="bg-card text-foreground">Cote Bookmaker</option>
+                  <option value="time" className="bg-card text-foreground">Heure de Match</option>
+                </select>
+                <ChevronDown size={13} strokeWidth={1.5} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none" />
+              </div>
             </div>
           </div>
         </div>
@@ -179,6 +236,137 @@ export default function ScreenerPage() {
           })}
         </div>
       </Card>
+
+      {/* ADVANCED FILTERS MODAL / BOTTOM SHEET */}
+      <AnimatePresence>
+        {isAdvancedOpen && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+            {/* Scrim Overlay */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setIsAdvancedOpen(false)}
+              className="fixed inset-0 bg-black/50 dark:bg-black/70 backdrop-blur-md"
+            />
+
+            {/* Modal Window */}
+            <motion.div
+              role="dialog"
+              aria-modal="true"
+              initial={{ opacity: 0, scale: 0.95, y: 10 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 10 }}
+              transition={{ type: 'spring', stiffness: 420, damping: 30 }}
+              className="relative w-full max-w-lg bg-card/95 backdrop-blur-2xl border border-border shadow-2xl rounded-3xl p-5 sm:p-6 z-10 font-sans flex flex-col"
+            >
+              <div className="flex items-center justify-between pb-3 border-b border-border mb-4">
+                <div className="flex items-center gap-2">
+                  <SlidersHorizontal size={16} className="text-emerald-500" />
+                  <h3 className="text-base font-semibold text-foreground tracking-tight font-sans">
+                    Filtres Quantitatifs Avancés
+                  </h3>
+                </div>
+                <CloseButton onClick={() => setIsAdvancedOpen(false)} />
+              </div>
+
+              <div className="space-y-4">
+                {/* 1. Min EV Threshold */}
+                <div className="space-y-2">
+                  <div className="flex justify-between text-xs font-sans">
+                    <span className="text-muted-foreground font-medium">Seuil Minimum d’Expected Value</span>
+                    <span className="text-emerald-500 font-bold tabular-nums">
+                      {minCustomEV > 0 ? `+${minCustomEV}%` : 'Tous'}
+                    </span>
+                  </div>
+                  <input
+                    type="range"
+                    min="0"
+                    max="20"
+                    step="1"
+                    value={minCustomEV}
+                    onChange={e => setMinCustomEV(parseFloat(e.target.value))}
+                    className="w-full accent-emerald-500 bg-neutral-200 dark:bg-white/10 h-1.5 rounded-lg cursor-pointer"
+                  />
+                  <div className="flex justify-between text-[10px] text-muted-foreground font-sans">
+                    <span>0% (Sans minimum)</span>
+                    <span>+20% (Ultra-Alpha)</span>
+                  </div>
+                </div>
+
+                {/* 2. Min xG Threshold */}
+                <div className="space-y-2 pt-2 border-t border-border">
+                  <div className="flex justify-between text-xs font-sans">
+                    <span className="text-muted-foreground font-medium">xG Cumulés Minimum</span>
+                    <span className="text-foreground font-bold tabular-nums">
+                      {minXG > 0 ? `${minXG.toFixed(1)} xG` : 'Tous'}
+                    </span>
+                  </div>
+                  <input
+                    type="range"
+                    min="0"
+                    max="4.5"
+                    step="0.5"
+                    value={minXG}
+                    onChange={e => setMinXG(parseFloat(e.target.value))}
+                    className="w-full accent-emerald-500 bg-neutral-200 dark:bg-white/10 h-1.5 rounded-lg cursor-pointer"
+                  />
+                </div>
+
+                {/* 3. Bookmaker Selector */}
+                <div className="space-y-2 pt-2 border-t border-border">
+                  <span className="text-xs font-medium text-muted-foreground block font-sans">
+                    Opérateur avec Meilleure Cote
+                  </span>
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-1.5">
+                    {[
+                      { id: 'all', label: 'Tous les bookmakers' },
+                      { id: 'Pinnacle', label: 'Pinnacle' },
+                      { id: 'Winamax', label: 'Winamax' },
+                      { id: 'Betclic', label: 'Betclic' },
+                      { id: 'Unibet', label: 'Unibet' },
+                    ].map(bm => (
+                      <button
+                        key={bm.id}
+                        type="button"
+                        onClick={() => setSelectedBookmaker(bm.id)}
+                        className={`h-8 rounded-full text-xs font-medium transition-all active:scale-95 cursor-pointer font-sans ${
+                          selectedBookmaker === bm.id
+                            ? 'bg-white text-zinc-950 font-medium shadow-sm'
+                            : 'bg-black/5 dark:bg-white/[0.04] border border-border text-muted-foreground hover:text-foreground'
+                        }`}
+                      >
+                        {bm.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+              {/* Actions Footer */}
+              <div className="pt-4 border-t border-border mt-5 flex items-center justify-between">
+                <button
+                  type="button"
+                  onClick={resetAdvancedFilters}
+                  className="h-9 px-3.5 rounded-full bg-black/5 dark:bg-white/[0.06] hover:bg-black/10 dark:hover:bg-white/[0.1] border border-border text-xs font-medium text-foreground flex items-center gap-1.5 active:scale-95 transition-all cursor-pointer font-sans"
+                >
+                  <RotateCcw size={13} strokeWidth={1.5} />
+                  <span>Réinitialiser</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setIsAdvancedOpen(false)}
+                  className="h-9 px-4 rounded-full bg-foreground text-background font-medium text-xs sm:text-sm flex items-center gap-1.5 hover:opacity-90 active:scale-95 transition-all shadow-sm cursor-pointer font-sans shrink-0 focus-visible:ring-2 focus-visible:ring-foreground/20 focus-visible:outline-none"
+                >
+                  <Check size={14} strokeWidth={2} />
+                  <span>Appliquer les filtres</span>
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
 
       {/* Results Count & Match Islands List */}
       <div className="space-y-3">
@@ -218,10 +406,16 @@ export default function ScreenerPage() {
                   </div>
 
                   <div className="flex items-center gap-3">
-                    <h3 className="text-base font-semibold text-foreground tracking-tight font-sans">
-                      {match.homeTeam} <span className="text-muted-foreground font-normal">vs</span>{' '}
-                      {match.awayTeam}
-                    </h3>
+                    <Link
+                      href={`/match/${match.id}`}
+                      className="group/title inline-block"
+                      title={`Analyser ${match.homeTeam} vs ${match.awayTeam}`}
+                    >
+                      <h3 className="text-base font-semibold text-foreground tracking-tight font-sans group-hover/title:text-emerald-400 transition-colors">
+                        {match.homeTeam} <span className="text-muted-foreground font-normal">vs</span>{' '}
+                        {match.awayTeam}
+                      </h3>
+                    </Link>
                   </div>
 
                   {/* Form & xG stats line */}

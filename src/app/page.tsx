@@ -193,12 +193,14 @@ export default function RadarPage() {
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
           {mockDroppingOdds.map(drop => (
-            <div
+            <Link
               key={drop.id}
-              className="p-3 rounded-2xl bg-neutral-50 dark:bg-white/[0.03] border border-border hover:bg-neutral-100 dark:hover:bg-white/[0.06] hover:border-foreground/20 active:scale-[0.98] transition-all flex items-center justify-between cursor-pointer"
+              href={`/match/${drop.matchId}`}
+              className="p-3 rounded-2xl bg-neutral-50 dark:bg-white/[0.03] border border-border hover:bg-neutral-100 dark:hover:bg-white/[0.06] hover:border-foreground/20 active:scale-[0.98] transition-all flex items-center justify-between cursor-pointer group"
+              title={`Analyser ${drop.match}`}
             >
               <div>
-                <span className="text-xs font-semibold text-foreground font-sans block truncate">
+                <span className="text-xs font-semibold text-foreground group-hover:text-emerald-400 transition-colors font-sans block truncate">
                   {drop.match}
                 </span>
                 <span className="text-[11px] text-muted-foreground font-sans">
@@ -220,7 +222,7 @@ export default function RadarPage() {
                   {drop.dropPercent}%
                 </span>
               </div>
-            </div>
+            </Link>
           ))}
         </div>
       </Card>

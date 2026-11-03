@@ -1,6 +1,7 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect, Suspense } from 'react';
+import { useSearchParams, useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Card } from '@/components/ui/Card';
 import { EVBadge, StatusBadge } from '@/components/ui/Badge';
@@ -20,7 +21,10 @@ import {
   ChevronDown,
 } from 'lucide-react';
 
-export default function BankrollPage() {
+function BankrollContent() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+
   const [bets, setBets] = useState<BankrollBet[]>(mockBankrollBets);
   const [statusFilter, setStatusFilter] = useState<'Tous' | 'En cours' | 'Gagné' | 'Perdu'>('Tous');
 
@@ -37,6 +41,19 @@ export default function BankrollPage() {
   const [newOdds, setNewOdds] = useState('2.00');
   const [newStake, setNewStake] = useState('100');
   const [newBookmaker, setNewBookmaker] = useState<'Pinnacle' | 'Winamax' | 'Betclic' | 'Unibet'>('Pinnacle');
+
+  useEffect(() => {
+    if (searchParams.get('action') === 'new') {
+      setShowAddForm(true);
+    }
+  }, [searchParams]);
+
+  const handleCloseForm = () => {
+    setShowAddForm(false);
+    if (searchParams.get('action') === 'new') {
+      router.replace('/bankroll');
+    }
+  };
 
   // Calculate Kelly for the calculator widget
   const kellyResult = calculateKellyStake(
@@ -99,7 +116,7 @@ export default function BankrollPage() {
     setBets([newBetItem, ...bets]);
     setNewMatch('');
     setNewSelection('');
-    setShowAddForm(false);
+    handleCloseForm();
   };
 
   const filteredBets = bets.filter(b => {
@@ -147,7 +164,7 @@ export default function BankrollPage() {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              onClick={() => setShowAddForm(false)}
+              onClick={handleCloseForm}
               className="fixed inset-0 bg-black/50 dark:bg-black/70 backdrop-blur-md"
             />
 
@@ -170,7 +187,7 @@ export default function BankrollPage() {
                     Ajouter une opération à suivre dans votre grand livre
                   </p>
                 </div>
-                <CloseButton onClick={() => setShowAddForm(false)} />
+                <CloseButton onClick={handleCloseForm} />
               </div>
 
               <form onSubmit={handleAddBet} className="space-y-3.5">
@@ -254,7 +271,7 @@ export default function BankrollPage() {
                 <div className="flex items-center justify-end gap-2 pt-3 border-t border-border mt-4">
                   <button
                     type="button"
-                    onClick={() => setShowAddForm(false)}
+                    onClick={handleCloseForm}
                     className="h-9 px-4 rounded-full bg-black/5 dark:bg-white/[0.06] hover:bg-black/10 dark:hover:bg-white/[0.1] border border-border text-xs sm:text-sm font-medium text-foreground flex items-center justify-center gap-2 transition-all active:scale-95 cursor-pointer font-sans"
                   >
                     Annuler
@@ -617,5 +634,13 @@ export default function BankrollPage() {
         </div>
       </Card>
     </div>
+  );
+}
+
+export default function BankrollPage() {
+  return (
+    <Suspense fallback={<div className="p-4 text-xs text-muted-foreground font-sans">Chargement du portefeuille...</div>}>
+      <BankrollContent />
+    </Suspense>
   );
 }

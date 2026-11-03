@@ -583,6 +583,7 @@ export const mockTopValueBets: ValueBetOpportunity[] = mockMatches.flatMap(m => 
 // Dropping Odds Radar Ticker
 export interface DroppingOddAlert {
   id: string;
+  matchId: string;
   match: string;
   selection: string;
   bookmaker: string;
@@ -595,6 +596,7 @@ export interface DroppingOddAlert {
 export const mockDroppingOdds: DroppingOddAlert[] = [
   {
     id: 'drop-1',
+    matchId: 'psg-mci',
     match: 'PSG vs Man City',
     selection: 'PSG Victoire',
     bookmaker: 'Pinnacle',
@@ -605,6 +607,7 @@ export const mockDroppingOdds: DroppingOddAlert[] = [
   },
   {
     id: 'drop-2',
+    matchId: 'int-bar',
     match: 'Inter Milan vs FC Barcelone',
     selection: 'Barcelone Victoire',
     bookmaker: 'Winamax',
@@ -615,6 +618,7 @@ export const mockDroppingOdds: DroppingOddAlert[] = [
   },
   {
     id: 'drop-3',
+    matchId: 'ars-rma',
     match: 'Arsenal vs Real Madrid',
     selection: 'Plus de 2.5 Buts',
     bookmaker: 'Betclic',
@@ -625,6 +629,7 @@ export const mockDroppingOdds: DroppingOddAlert[] = [
   },
   {
     id: 'drop-4',
+    matchId: 'bay-liv',
     match: 'Bayern Munich vs Liverpool',
     selection: 'Les 2 Marquent & Over 2.5',
     bookmaker: 'Pinnacle',

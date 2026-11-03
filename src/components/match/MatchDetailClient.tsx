@@ -2,9 +2,11 @@
 
 import React, { useState } from 'react';
 import Link from 'next/link';
+import { motion, AnimatePresence } from 'framer-motion';
 import { MatchDetails } from '@/types';
 import { Card } from '@/components/ui/Card';
 import { EVBadge } from '@/components/ui/Badge';
+import { CloseButton } from '@/components/ui/CloseButton';
 import { SegmentedControl } from '@/components/ui/SegmentedControl';
 import { PoissonHeatmap } from '@/components/charts/PoissonHeatmap';
 import { ProbabilityBar } from '@/components/charts/ProbabilityBar';
@@ -15,6 +17,8 @@ import {
   ArrowLeft,
   BookmarkPlus,
   Check,
+  Info,
+  TrendingUp,
 } from 'lucide-react';
 
 interface MatchDetailClientProps {
@@ -27,6 +31,7 @@ type SegmentTab = 'poisson' | 'dynamics' | 'props' | 'lineups';
 export function MatchDetailClient({ match, allMatches }: MatchDetailClientProps) {
   const [activeTab, setActiveTab] = useState<SegmentTab>('poisson');
   const [trackedProps, setTrackedProps] = useState<Record<string, boolean>>({});
+  const [selectedPropDetail, setSelectedPropDetail] = useState<(typeof match.keyProps)[0] | null>(null);
 
   const toggleTrackProp = (propId: string) => {
     setTrackedProps(prev => ({
@@ -449,26 +454,41 @@ export function MatchDetailClient({ match, allMatches }: MatchDetailClientProps)
                     </div>
                   </div>
 
-                  <button
-                    type="button"
-                    onClick={() => toggleTrackProp(prop.id)}
-                    className={`w-full h-9 rounded-full text-xs font-medium flex items-center justify-center gap-1.5 transition-all active:scale-95 cursor-pointer font-sans ${isTracked
-                        ? 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/30'
-                        : 'bg-foreground text-background hover:opacity-90 shadow-sm'
-                      }`}
-                  >
-                    {isTracked ? (
-                      <>
-                        <Check size={14} strokeWidth={2} />
-                        <span>Prop Suivi</span>
-                      </>
-                    ) : (
-                      <>
-                        <BookmarkPlus size={14} strokeWidth={1.75} />
-                        <span>Suivre ce Prop</span>
-                      </>
-                    )}
-                  </button>
+                  <div className="flex items-center gap-2 pt-2">
+                    <button
+                      type="button"
+                      onClick={() => setSelectedPropDetail(prop)}
+                      className="flex-1 h-9 px-3 rounded-full bg-black/5 dark:bg-white/[0.06] hover:bg-black/10 dark:hover:bg-white/[0.1] border border-border text-xs font-medium text-foreground flex items-center justify-center gap-1.5 transition-all active:scale-95 cursor-pointer font-sans"
+                    >
+                      <Info size={13} strokeWidth={1.5} className="text-muted-foreground" />
+                      <span>Détails Stats</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        toggleTrackProp(prop.id);
+                      }}
+                      className={`h-9 px-3.5 rounded-full text-xs font-medium flex items-center justify-center gap-1.5 transition-all active:scale-95 cursor-pointer font-sans shrink-0 ${isTracked
+                          ? 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/30'
+                          : 'bg-foreground text-background hover:opacity-90 shadow-sm'
+                        }`}
+                      title="Suivre ce Prop"
+                    >
+                      {isTracked ? (
+                        <>
+                          <Check size={14} strokeWidth={2} />
+                          <span>Suivi</span>
+                        </>
+                      ) : (
+                        <>
+                          <BookmarkPlus size={14} strokeWidth={1.75} />
+                          <span>Suivre</span>
+                        </>
+                      )}
+                    </button>
+                  </div>
                 </Card>
               );
             })}
@@ -582,6 +602,128 @@ export function MatchDetailClient({ match, allMatches }: MatchDetailClientProps)
           </Card>
         </div>
       )}
+
+      {/* PLAYER PROP DETAIL MODAL / DRAWER */}
+      <AnimatePresence>
+        {selectedPropDetail && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setSelectedPropDetail(null)}
+              className="fixed inset-0 bg-black/50 dark:bg-black/70 backdrop-blur-md"
+            />
+
+            <motion.div
+              role="dialog"
+              aria-modal="true"
+              initial={{ opacity: 0, scale: 0.95, y: 10 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 10 }}
+              transition={{ type: 'spring', stiffness: 420, damping: 30 }}
+              className="relative w-full max-w-lg bg-card/95 backdrop-blur-2xl border border-border shadow-2xl rounded-3xl p-5 sm:p-6 z-10 font-sans flex flex-col"
+            >
+              <div className="flex items-center justify-between pb-3 border-b border-border mb-4">
+                <div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-[10px] uppercase tracking-wider font-semibold px-2.5 py-0.5 rounded-full bg-black/5 dark:bg-white/[0.05] border border-border text-muted-foreground font-sans">
+                      {selectedPropDetail.team} • {selectedPropDetail.position}
+                    </span>
+                    <EVBadge evPercent={selectedPropDetail.evPercent} size="sm" />
+                  </div>
+                  <h3 className="text-lg font-bold text-foreground tracking-tight mt-1">
+                    {selectedPropDetail.name}
+                  </h3>
+                </div>
+                <CloseButton onClick={() => setSelectedPropDetail(null)} />
+              </div>
+
+              <div className="space-y-4">
+                <div className="p-3 rounded-2xl bg-neutral-50 dark:bg-white/[0.03] border border-border">
+                  <span className="text-xs font-semibold text-emerald-500 block mb-1">
+                    Marché : {selectedPropDetail.propType}
+                  </span>
+                  <p className="text-xs text-muted-foreground">
+                    {selectedPropDetail.recentFormStat}
+                  </p>
+                </div>
+
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-center">
+                  <div className="p-2.5 rounded-xl bg-neutral-50 dark:bg-white/[0.03] border border-border">
+                    <span className="text-[10px] text-muted-foreground uppercase block">Cote Book</span>
+                    <span className="text-base font-bold text-foreground tabular-nums">
+                      @{selectedPropDetail.bookmakerOdds.toFixed(2)}
+                    </span>
+                  </div>
+                  <div className="p-2.5 rounded-xl bg-neutral-50 dark:bg-white/[0.03] border border-border">
+                    <span className="text-[10px] text-muted-foreground uppercase block">Cote Juste</span>
+                    <span className="text-base font-bold text-foreground/80 tabular-nums">
+                      @{selectedPropDetail.fairOdds.toFixed(2)}
+                    </span>
+                  </div>
+                  <div className="p-2.5 rounded-xl bg-neutral-50 dark:bg-white/[0.03] border border-border">
+                    <span className="text-[10px] text-muted-foreground uppercase block">Tirs / 90m</span>
+                    <span className="text-base font-bold text-emerald-500 tabular-nums">
+                      {selectedPropDetail.avgShotsPer90}
+                    </span>
+                  </div>
+                  <div className="p-2.5 rounded-xl bg-neutral-50 dark:bg-white/[0.03] border border-border">
+                    <span className="text-[10px] text-muted-foreground uppercase block">xG / 90m</span>
+                    <span className="text-base font-bold text-emerald-500 tabular-nums">
+                      {selectedPropDetail.xgPer90}
+                    </span>
+                  </div>
+                </div>
+
+                <div className="p-3 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 text-xs">
+                  <div className="flex items-center gap-1.5 font-semibold text-emerald-500 mb-0.5">
+                    <TrendingUp size={14} />
+                    <span>Edge Statistique Modèle : +{selectedPropDetail.evPercent}% EV</span>
+                  </div>
+                  <p className="text-muted-foreground text-[11px]">
+                    La probabilité estimée par le modèle Poisson ({Math.round(selectedPropDetail.modelProb * 100)}%) surpasse la cote implicite des bookmakers.
+                  </p>
+                </div>
+              </div>
+
+              <div className="pt-4 border-t border-border mt-5 flex items-center justify-end gap-2">
+                <button
+                  type="button"
+                  onClick={() => setSelectedPropDetail(null)}
+                  className="h-9 px-4 rounded-full bg-black/5 dark:bg-white/[0.06] hover:bg-black/10 dark:hover:bg-white/[0.1] border border-border text-xs font-medium text-foreground transition-all active:scale-95 cursor-pointer font-sans"
+                >
+                  Fermer
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    toggleTrackProp(selectedPropDetail.id);
+                    setSelectedPropDetail(null);
+                  }}
+                  className={`h-9 px-4 rounded-full text-xs font-medium flex items-center gap-1.5 transition-all active:scale-95 cursor-pointer font-sans ${
+                    trackedProps[selectedPropDetail.id]
+                      ? 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/30'
+                      : 'bg-foreground text-background hover:opacity-90 shadow-sm'
+                  }`}
+                >
+                  {trackedProps[selectedPropDetail.id] ? (
+                    <>
+                      <Check size={14} strokeWidth={2} />
+                      <span>Prop Déjà Suivi</span>
+                    </>
+                  ) : (
+                    <>
+                      <BookmarkPlus size={14} strokeWidth={1.75} />
+                      <span>Ajouter au Tracker</span>
+                    </>
+                  )}
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
